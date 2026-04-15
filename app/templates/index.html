@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ settings.app_name }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', path='/styles.css') }}">
+</head>
+<body>
+  <main class="shell">
+    <section class="hero">
+      <div>
+        <p class="eyebrow">UniFi UDM Pro</p>
+        <h1>{{ settings.app_name }}</h1>
+        <p class="subtle">Prueft den verfuegbaren Arbeitsspeicher per SSH, startet bei Bedarf UniFi OS Dienste neu und versendet Benachrichtigungen.</p>
+      </div>
+      <form method="post" action="/check">
+        <button type="submit">Jetzt pruefen</button>
+      </form>
+    </section>
+
+    <section class="grid">
+      <article class="card accent">
+        <h2>Status</h2>
+        <p class="metric">{{ snapshot.last_status }}</p>
+        <p>Letzter Check: {{ snapshot.last_check_at or 'noch nie' }}</p>
+        <p>Letzter Restart: {{ snapshot.last_restart_at or 'noch nie' }}</p>
+      </article>
+
+      <article class="card">
+        <h2>Freier Speicher</h2>
+        <p class="metric">{{ snapshot.available_mb or 'n/a' }} MB</p>
+        <p>{{ snapshot.available_percent or 'n/a' }} % verfuegbar von {{ snapshot.total_mb or 'n/a' }} MB</p>
+      </article>
+
+      <article class="card">
+        <h2>Schwellenwerte</h2>
+        <p>Minimum MB: {{ settings.memory_min_available_mb or 'deaktiviert' }}</p>
+        <p>Minimum Prozent: {{ settings.memory_min_available_percent or 'deaktiviert' }}</p>
+        <p>Cooldown: {{ settings.restart_cooldown_seconds }} Sekunden</p>
+      </article>
+
+      <article class="card">
+        <h2>Benachrichtigungen</h2>
+        <p>Telegram: {{ 'aktiv' if settings.telegram_bot_token and settings.telegram_chat_id else 'aus' }}</p>
+        <p>Gotify: {{ 'aktiv' if settings.gotify_url and settings.gotify_token else 'aus' }}</p>
+        <p>E-Mail: {{ 'aktiv' if settings.smtp_host and settings.smtp_to and settings.smtp_from else 'aus' }}</p>
+      </article>
+    </section>
+
+    {% if snapshot.last_error %}
+    <section class="card error">
+      <h2>Letzter Fehler</h2>
+      <p>{{ snapshot.last_error }}</p>
+    </section>
+    {% endif %}
+
+    <section class="card">
+      <h2>Ereignisse</h2>
+      <div class="events">
+        {% for event in snapshot.events %}
+        <article class="event">
+          <div class="event-header">
+            <strong>{{ event.level }}</strong>
+            <time>{{ event.timestamp }}</time>
+          </div>
+          <p>{{ event.message }}</p>
+          {% if event.details %}
+          <pre>{{ event.details }}</pre>
+          {% endif %}
+        </article>
+        {% else %}
+        <p>Noch keine Ereignisse vorhanden.</p>
+        {% endfor %}
+      </div>
+    </section>
+  </main>
+</body>
+</html>

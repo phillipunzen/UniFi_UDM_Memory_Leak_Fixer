@@ -1,0 +1,12 @@
+services:
+  udm-memory-controller:
+    build: .
+    container_name: udm-memory-controller
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    volumes:
+      - ./data:/data
+      - ./ssh:/ssh:ro
+    restart: unless-stopped
