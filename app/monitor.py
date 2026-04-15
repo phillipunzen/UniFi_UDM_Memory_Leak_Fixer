@@ -71,14 +71,17 @@ class MonitorService:
         total_mb, available_mb = await asyncio.to_thread(self._read_memory)
         available_percent = (available_mb / total_mb) * 100
         breached, reason = self._threshold_breached(available_mb, available_percent)
+        device_name = await asyncio.to_thread(self._read_device_name)
 
         self.snapshot.last_check_at = now.isoformat(timespec="seconds")
         self.snapshot.last_status = "ok"
         self.snapshot.last_error = None
+        self.snapshot.device_name = device_name or self.snapshot.device_name
         self.snapshot.total_mb = round(total_mb, 2)
         self.snapshot.available_mb = round(available_mb, 2)
         self.snapshot.available_percent = round(available_percent, 2)
         self.snapshot.threshold_breached = breached
+        self.snapshot.add_memory_sample(self.snapshot.last_check_at, available_mb, available_percent)
         self.snapshot.add_event(
             "info",
             "Memory check completed",
@@ -97,6 +100,14 @@ class MonitorService:
         if exit_code != 0:
             raise RuntimeError(f"Memory check command failed: {stderr.strip() or stdout.strip()}")
         return parse_meminfo(stdout)
+
+    def _read_device_name(self) -> str | None:
+        exit_code, stdout, stderr = self.ssh.run(self.settings.device_name_command)
+        if exit_code != 0:
+            message = stderr.strip() or stdout.strip()
+            self.snapshot.add_event("warning", "Device name lookup failed", error=message)
+            return None
+        return stdout.strip() or None
 
     def _threshold_breached(self, available_mb: float, available_percent: float) -> tuple[bool, str]:
         reasons: list[str] = []

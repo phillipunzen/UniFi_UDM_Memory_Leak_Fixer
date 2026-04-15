@@ -10,12 +10,12 @@
   <main class="shell">
     <section class="hero">
       <div>
-        <p class="eyebrow">UniFi UDM Pro</p>
+        <p class="eyebrow">{{ snapshot.device_name or 'UniFi device' }}</p>
         <h1>{{ settings.app_name }}</h1>
-        <p class="subtle">Prueft den verfuegbaren Arbeitsspeicher per SSH, startet bei Bedarf UniFi OS Dienste neu und versendet Benachrichtigungen.</p>
+        <p class="subtle">Checks available memory over SSH, restarts UniFi OS services when needed, and sends notifications.</p>
       </div>
       <form method="post" action="/check">
-        <button type="submit">Jetzt pruefen</button>
+        <button type="submit">Run check now</button>
       </form>
     </section>
 
@@ -23,40 +23,62 @@
       <article class="card accent">
         <h2>Status</h2>
         <p class="metric">{{ snapshot.last_status }}</p>
-        <p>Letzter Check: {{ snapshot.last_check_at or 'noch nie' }}</p>
-        <p>Letzter Restart: {{ snapshot.last_restart_at or 'noch nie' }}</p>
+        <p>Last check: {{ snapshot.last_check_at or 'never' }}</p>
+        <p>Last restart: {{ snapshot.last_restart_at or 'never' }}</p>
       </article>
 
       <article class="card">
-        <h2>Freier Speicher</h2>
+        <h2>Available memory</h2>
         <p class="metric">{{ snapshot.available_mb or 'n/a' }} MB</p>
-        <p>{{ snapshot.available_percent or 'n/a' }} % verfuegbar von {{ snapshot.total_mb or 'n/a' }} MB</p>
+        <p>{{ snapshot.available_percent or 'n/a' }} % available of {{ snapshot.total_mb or 'n/a' }} MB</p>
       </article>
 
       <article class="card">
-        <h2>Schwellenwerte</h2>
-        <p>Minimum MB: {{ settings.memory_min_available_mb or 'deaktiviert' }}</p>
-        <p>Minimum Prozent: {{ settings.memory_min_available_percent or 'deaktiviert' }}</p>
-        <p>Cooldown: {{ settings.restart_cooldown_seconds }} Sekunden</p>
+        <h2>Thresholds</h2>
+        <p>Minimum MB: {{ settings.memory_min_available_mb or 'disabled' }}</p>
+        <p>Minimum percent: {{ settings.memory_min_available_percent or 'disabled' }}</p>
+        <p>Cooldown: {{ settings.restart_cooldown_seconds }} seconds</p>
       </article>
 
       <article class="card">
-        <h2>Benachrichtigungen</h2>
-        <p>Telegram: {{ 'aktiv' if settings.telegram_bot_token and settings.telegram_chat_id else 'aus' }}</p>
-        <p>Gotify: {{ 'aktiv' if settings.gotify_url and settings.gotify_token else 'aus' }}</p>
-        <p>E-Mail: {{ 'aktiv' if settings.smtp_host and settings.smtp_to and settings.smtp_from else 'aus' }}</p>
+        <h2>Notifications</h2>
+        <p>Telegram: {{ 'enabled' if settings.telegram_bot_token and settings.telegram_chat_id else 'off' }}</p>
+        <p>Gotify: {{ 'enabled' if settings.gotify_url and settings.gotify_token else 'off' }}</p>
+        <p>Email: {{ 'enabled' if settings.smtp_host and settings.smtp_to and settings.smtp_from else 'off' }}</p>
       </article>
+    </section>
+
+    <section class="card">
+      <div class="chart-header">
+        <h2>Memory history</h2>
+        <p>Last {{ snapshot.memory_history|length }} samples</p>
+      </div>
+      {% if chart_points %}
+      <div class="chart-shell">
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none" class="chart">
+          <polyline fill="none" stroke="url(#lineGradient)" stroke-width="2.5" points="{{ chart_points }}"></polyline>
+          <defs>
+            <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#f4a259"></stop>
+              <stop offset="100%" stop-color="#0a7c86"></stop>
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+      {% else %}
+      <p>No history yet. Run a few checks to populate the chart.</p>
+      {% endif %}
     </section>
 
     {% if snapshot.last_error %}
     <section class="card error">
-      <h2>Letzter Fehler</h2>
+      <h2>Last error</h2>
       <p>{{ snapshot.last_error }}</p>
     </section>
     {% endif %}
 
     <section class="card">
-      <h2>Ereignisse</h2>
+      <h2>Events</h2>
       <div class="events">
         {% for event in snapshot.events %}
         <article class="event">
@@ -70,7 +92,7 @@
           {% endif %}
         </article>
         {% else %}
-        <p>Noch keine Ereignisse vorhanden.</p>
+        <p>No events recorded yet.</p>
         {% endfor %}
       </div>
     </section>

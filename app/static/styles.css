@@ -100,6 +100,35 @@ button {
   gap: 12px;
 }
 
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+}
+
+.chart-shell {
+  margin-top: 12px;
+  height: 220px;
+  border-radius: 18px;
+  background:
+    linear-gradient(to top, rgba(10, 124, 134, 0.06), rgba(10, 124, 134, 0)),
+    repeating-linear-gradient(
+      to top,
+      rgba(29, 42, 51, 0.06) 0,
+      rgba(29, 42, 51, 0.06) 1px,
+      transparent 1px,
+      transparent 25%
+    );
+  padding: 12px;
+}
+
+.chart {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
 .event {
   padding: 16px;
   border-radius: 18px;

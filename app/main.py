@@ -42,6 +42,22 @@ def require_auth(credentials: HTTPBasicCredentials | None = Depends(security)) -
         )
 
 
+def build_chart_points(history: list[dict[str, float | str]]) -> str:
+    if not history:
+        return ""
+    if len(history) == 1:
+        return "0,100"
+
+    max_percent = max(float(item["available_percent"]) for item in history) or 1
+    points: list[str] = []
+    for index, item in enumerate(history):
+        x = (index / (len(history) - 1)) * 100
+        percent = float(item["available_percent"])
+        y = 100 - ((percent / max_percent) * 100)
+        points.append(f"{x:.2f},{y:.2f}")
+    return " ".join(points)
+
+
 @app.on_event("startup")
 async def startup_event() -> None:
     await monitor.start()
@@ -61,6 +77,7 @@ async def index(request: Request, _: None = Depends(require_auth)) -> HTMLRespon
             "request": request,
             "snapshot": monitor.snapshot,
             "settings": settings,
+            "chart_points": build_chart_points(monitor.snapshot.memory_history),
         },
     )
 
@@ -72,8 +89,15 @@ async def api_status(_: None = Depends(require_auth)) -> JSONResponse:
 
 @app.post("/api/check")
 async def api_check(_: None = Depends(require_auth)) -> JSONResponse:
-    snapshot = await monitor.trigger_check()
-    return JSONResponse(snapshot.to_dict())
+    try:
+        snapshot = await monitor.trigger_check()
+        return JSONResponse(snapshot.to_dict())
+    except Exception as exc:
+        monitor.snapshot.last_status = "error"
+        monitor.snapshot.last_error = str(exc)
+        monitor.snapshot.add_event("error", "Manual check failed", error=str(exc))
+        store.save(monitor.snapshot)
+        return JSONResponse(monitor.snapshot.to_dict(), status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @app.get("/healthz")
@@ -83,5 +107,11 @@ async def healthz() -> dict[str, str]:
 
 @app.post("/check")
 async def manual_check(_: None = Depends(require_auth)) -> Response:
-    await monitor.trigger_check()
+    try:
+        await monitor.trigger_check()
+    except Exception as exc:
+        monitor.snapshot.last_status = "error"
+        monitor.snapshot.last_error = str(exc)
+        monitor.snapshot.add_event("error", "Manual check failed", error=str(exc))
+        store.save(monitor.snapshot)
     return RedirectResponse("/", status_code=status.HTTP_303_SEE_OTHER)

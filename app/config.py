@@ -43,6 +43,7 @@ class Settings:
     memory_min_available_mb: int | None = _as_int(os.getenv("MEMORY_MIN_AVAILABLE_MB"))
     memory_min_available_percent: float | None = _as_float(os.getenv("MEMORY_MIN_AVAILABLE_PERCENT"))
     memory_check_command: str = os.getenv("MEMORY_CHECK_COMMAND", "cat /proc/meminfo")
+    device_name_command: str = os.getenv("DEVICE_NAME_COMMAND", "hostname")
     service_restart_command: str = os.getenv("SERVICE_RESTART_COMMAND", "unifi-os restart")
     dry_run_restart: bool = _as_bool(os.getenv("DRY_RUN_RESTART"), False)
     ui_username: str | None = os.getenv("UI_USERNAME")

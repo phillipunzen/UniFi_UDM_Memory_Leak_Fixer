@@ -15,6 +15,7 @@ class Event:
 
 @dataclass(slots=True)
 class MonitorSnapshot:
+    device_name: str | None = None
     last_check_at: str | None = None
     last_restart_at: str | None = None
     last_notification_at: str | None = None
@@ -25,6 +26,7 @@ class MonitorSnapshot:
     total_mb: float | None = None
     threshold_breached: bool = False
     service_restart_count: int = 0
+    memory_history: list[dict[str, float | str]] = field(default_factory=list)
     events: list[Event] = field(default_factory=list)
 
     def add_event(self, level: str, message: str, **details: Any) -> None:
@@ -36,6 +38,16 @@ class MonitorSnapshot:
         )
         self.events.insert(0, event)
         del self.events[50:]
+
+    def add_memory_sample(self, timestamp: str, available_mb: float, available_percent: float) -> None:
+        self.memory_history.append(
+            {
+                "timestamp": timestamp,
+                "available_mb": round(available_mb, 2),
+                "available_percent": round(available_percent, 2),
+            }
+        )
+        del self.memory_history[:-72]
 
     def to_dict(self) -> dict[str, Any]:
         data = asdict(self)
