@@ -1,6 +1,6 @@
 services:
   udm-memory-controller:
-    build: .
+    image: ghcr.io/phillipunzen/unifi_udm_memory_leak_fixer:latest
     container_name: udm-memory-controller
     ports:
       - "8080:8080"
