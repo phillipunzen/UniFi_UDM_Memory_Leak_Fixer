@@ -19,7 +19,7 @@ A lightweight Docker service for UniFi UDM Pro or UDM SE devices. It connects ov
 3. Start the container:
 
 ```bash
-docker compose up -d --build
+docker compose up -d
 ```
 
 The Web UI will then be available at [http://localhost:8080](http://localhost:8080) by default.
