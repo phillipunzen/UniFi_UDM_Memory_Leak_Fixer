@@ -1,63 +1,71 @@
 # UDM Memory Controller
 
-Kleiner Docker-Dienst fuer eine UniFi UDM Pro oder UDM SE. Die Anwendung verbindet sich per SSH, prueft regelmaessig den verfuegbaren Arbeitsspeicher, startet bei einem konfigurierbaren Schwellenwert einmalig die UniFi-OS-Dienste neu und kann Benachrichtigungen verschicken.
+A lightweight Docker service for UniFi UDM Pro or UDM SE devices. It connects over SSH, checks available memory on a schedule, restarts UniFi OS services when a configurable threshold is crossed, and can send notifications.
 
-## Funktionen
+## Features
 
-- SSH-Verbindung zur UDM Pro mit Passwort oder Private Key
-- Speicherpruefung alle 5 Minuten oder in frei konfigurierbarem Intervall
-- Schwellwerte in MB und/oder Prozent verfuegbar
-- Cooldown, damit bei dauerhaft niedrigem Speicher nicht in einer Schleife neu gestartet wird
-- Benachrichtigungen ueber Telegram, Gotify oder SMTP/E-Mail
-- Kleine WebUI mit Status, manuellem Trigger und Ereignisverlauf
-- Health-Endpoint unter `/healthz`
+- SSH connectivity to the UDM Pro using either password or private key authentication
+- Memory checks every 5 minutes by default, with a configurable polling interval
+- Thresholds based on available memory in MB and/or percent
+- Restart cooldown protection to avoid repeated restart loops
+- Notifications via Telegram, Gotify, or SMTP email
+- Small Web UI with current status, manual trigger, and event history
+- Health endpoint at `/healthz`
 
-## Schnellstart
+## Quick Start
 
-1. `.env.example` nach `.env` kopieren und Werte anpassen.
-2. Optional SSH-Key unter `./ssh/id_rsa` ablegen.
-3. Container starten:
+1. Copy `.env.example` to `.env` and adjust the values.
+2. Optionally place an SSH private key in `./ssh/id_rsa`.
+3. Start the container:
 
 ```bash
 docker compose up -d --build
 ```
 
-Danach ist die WebUI standardmaessig unter [http://localhost:8080](http://localhost:8080) erreichbar.
+The Web UI will then be available at [http://localhost:8080](http://localhost:8080) by default.
 
-## Wichtige Konfiguration
+## Important Configuration
 
 ### SSH
 
-- `SSH_HOST`: IP oder Hostname der UDM
-- `SSH_USERNAME`: meist `root`
-- `SSH_PASSWORD`: alternativ zum Key
-- `SSH_PRIVATE_KEY_PATH`: Pfad im Container, z. B. `/ssh/id_rsa`
-- `VERIFY_HOST_KEY=false`: bequem fuer den Start, fuer produktiv besser aktivieren und Known Hosts pflegen
+- `SSH_HOST`: IP address or hostname of the UDM
+- `SSH_USERNAME`: usually `root`
+- `SSH_PASSWORD`: use this if you prefer password authentication
+- `SSH_PRIVATE_KEY_PATH`: path inside the container, for example `/ssh/id_rsa`
+- `VERIFY_HOST_KEY=false`: convenient for first setup, but enabling host key verification is recommended for production use
 
-### Speicher-Schwellen
+### Memory Thresholds
 
-- `MEMORY_MIN_AVAILABLE_MB`: Restart, wenn verfuegbarer RAM darunter liegt
-- `MEMORY_MIN_AVAILABLE_PERCENT`: Restart, wenn verfuegbarer RAM in Prozent darunter liegt
-- Es reicht, einen der beiden Werte zu setzen. Sind beide gesetzt, loest jeder Verstoss aus.
+- `MEMORY_MIN_AVAILABLE_MB`: restart when available memory drops below this value
+- `MEMORY_MIN_AVAILABLE_PERCENT`: restart when available memory drops below this percentage
+- You only need to set one of them. If both are set, either condition can trigger a restart.
 
-### Restart
+Example:
 
-- `SERVICE_RESTART_COMMAND`: Standard ist `unifi-os restart`
-- `RESTART_COOLDOWN_SECONDS`: Sperrzeit nach einem Restart
-- `DRY_RUN_RESTART=true`: ideal zum Testen ohne echten Neustart
+```env
+MEMORY_MIN_AVAILABLE_PERCENT=15
+```
 
-### Benachrichtigungen
+This means the service will restart UniFi OS services if available memory falls below `15%`.
+
+### Restart Behavior
+
+- `SERVICE_RESTART_COMMAND`: defaults to `unifi-os restart`
+- `RESTART_COOLDOWN_SECONDS`: cooldown period after a restart
+- `DRY_RUN_RESTART=true`: useful for testing without performing a real restart
+
+### Notifications
 
 - Telegram: `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`
 - Gotify: `GOTIFY_URL`, `GOTIFY_TOKEN`
-- E-Mail: `SMTP_HOST`, `SMTP_PORT`, `SMTP_FROM`, `SMTP_TO`, optional Login-Daten
+- Email: `SMTP_HOST`, `SMTP_PORT`, `SMTP_FROM`, `SMTP_TO`, plus optional authentication settings
 
-## Hinweise zur UDM Pro
+## Notes for UDM Pro
 
-- Auf einigen UniFi-OS-Versionen kann der passende Restart-Befehl abweichen. Falls `unifi-os restart` nicht funktioniert, bitte einen passenden Befehl in `SERVICE_RESTART_COMMAND` hinterlegen.
-- Fuer den Speichercheck wird standardmaessig `cat /proc/meminfo` ausgefuehrt und `MemAvailable` ausgewertet.
+- On some UniFi OS versions, the correct restart command may differ. If `unifi-os restart` does not work on your system, set `SERVICE_RESTART_COMMAND` to the correct command for your device.
+- The memory check uses `cat /proc/meminfo` by default and evaluates `MemAvailable`.
 
-## Lokale Entwicklung
+## Local Development
 
 ```bash
 python -m venv .venv
