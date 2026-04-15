@@ -32,6 +32,7 @@ The Web UI will then be available at [http://localhost:8080](http://localhost:80
 - `SSH_USERNAME`: usually `root`
 - `SSH_PASSWORD`: use this if you prefer password authentication
 - `SSH_PRIVATE_KEY_PATH`: path inside the container, for example `/ssh/id_rsa`
+- If you are using password authentication, leave `SSH_PRIVATE_KEY_PATH` empty
 - `VERIFY_HOST_KEY=false`: convenient for first setup, but enabling host key verification is recommended for production use
 
 ### Memory Thresholds

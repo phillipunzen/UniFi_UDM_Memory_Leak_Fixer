@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import paramiko
 
 from .config import Settings
@@ -27,21 +29,26 @@ class SSHRunner:
             "look_for_keys": False,
             "allow_agent": False,
         }
-        if self.settings.ssh_private_key_path:
+        if self.settings.ssh_password:
+            connect_args["password"] = self.settings.ssh_password
+        elif self._has_private_key():
             private_key = self._load_private_key()
             connect_args["pkey"] = private_key
-        elif self.settings.ssh_password:
-            connect_args["password"] = self.settings.ssh_password
         client.connect(**connect_args)
         return client
 
+    def _has_private_key(self) -> bool:
+        if not self.settings.ssh_private_key_path:
+            return False
+        return Path(self.settings.ssh_private_key_path).is_file()
+
     def _load_private_key(self) -> paramiko.PKey:
-        key_loaders = [
-            paramiko.RSAKey,
-            paramiko.Ed25519Key,
-            paramiko.ECDSAKey,
-            paramiko.DSSKey,
-        ]
+        key_loaders: list[type[paramiko.PKey]] = []
+        for loader_name in ("RSAKey", "Ed25519Key", "ECDSAKey"):
+            loader = getattr(paramiko, loader_name, None)
+            if loader is not None:
+                key_loaders.append(loader)
+
         last_error: Exception | None = None
         for loader in key_loaders:
             try:
